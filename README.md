@@ -129,7 +129,7 @@ sudo flashrom -p serprog:dev=/dev/ttyACM0:115200,spispeed=8M \
 ## 🔍 Keywords & Topics
 
 ```text
-Keywords: ESP32-S3, Serprog, Flashrom, SPI Flash Programmer, W25Qxx, HLK-7628N Unbrick, Hardware Hacking, In-Circuit Programming, Shayan Shirazi, شایان شیرازی.
+Keywords: ESP32-S3, Serprog, Flashrom, SPI Flash Programmer, W25Qxx, HLK-7628N Unbrick, Hardware Hacking, In-Circuit Programming, Shayan Shirazi.
 ```
 
 ---
