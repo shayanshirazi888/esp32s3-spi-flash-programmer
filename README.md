@@ -1,106 +1,131 @@
-# ESP32 Family SPI Flash Programmer (Serprog)
+# 💾 ESP32 High-Speed SPI Flash Programmer (Serprog)
 
-A lightweight, high-speed SPI Flash Programmer utilizing the native HW SPI peripheral of the **Espressif ESP32 MCU family** (including ESP32, ESP32-S3, ESP32-C3, etc.). This project implements the **Serprog** protocol, enabling seamless integration with the open-source **Flashrom** utility on Linux.
+<div align="center">
 
-This specific guide is tailored for unbricking and flashing bootloaders (such as U-Boot) onto the **HLK-7628N** (MT7628AN-based) Wi-Fi module, but it is compatible with any standard 3.3V SPI flash memory (e.g., W25Qxx series).
+![MCU](https://img.shields.io/badge/Target-ESP32%20%7C%20S3%20%7C%20C3-blue?style=for-the-badge&logo=espressif)
+![Protocol](https://img.shields.io/badge/Protocol-Serprog%20%2F%20Flashrom-green?style=for-the-badge)
+![SPI Speed](https://img.shields.io/badge/Clock%20Rate-Up%20to%2080%20MHz-orange?style=for-the-badge)
+![License](https://img.shields.io/badge/License-GPL--3.0-lightgrey?style=for-the-badge)
+
+<p align="center">
+  <b>High-speed hardware SPI Flash programmer leveraging Espressif HW SPI peripherals for in-circuit unbricking and burning U-Boot bootloaders onto MT7628 / HLK-7628N and standard 3.3V NOR SPI flash.</b>
+</p>
 
 ---
 
-## Features
-- **Multi-Target Support**: Compatible with the entire ESP32 family (Classic ESP32, S3, C3, S2).
-- **High Speed**: Leverages the ESP32 HW SPI peripheral capable of up to 80MHz clock rate.
-- **In-Circuit Programming**: Program the flash chip without desoldering by holding the target CPU in a reset state.
-- **Native CDC/UART**: Automatically chooses between Native USB-CDC or standard USB-to-UART based on the chip.
+</div>
+
+## 📌 Overview
+
+This project turns any member of the **Espressif ESP32 MCU family** (ESP32-S3, Classic ESP32, ESP32-C3) into a dedicated high-speed SPI Flash Programmer. By implementing the native **Serprog** protocol, it communicates seamlessly with the industry-standard **Flashrom** utility on Linux over native USB-CDC or high-speed UART.
+
+While universally compatible with any 3.3V SPI NOR Flash (such as the Winbond `W25Qxx` series), this repository includes battle-tested layouts and commands specifically tuned for unbricking and burning custom bootloaders onto the **HLK-7628N** (MediaTek MT7628) Wi-Fi router module.
 
 ---
 
-## Hardware Configuration & MCU Family Reference
+## ✨ Key Features
 
-Depending on the ESP32 chip model you are using, the default SPI pins and Linux serial ports differ. Refer to the table below to configure your wiring and toolchain:
+* **Universal ESP32 Compatibility:** Native support across ESP32-S3 (USB-CDC), ESP32 (UART), and ESP32-C3.
+* **Hardware SPI Acceleration:** Direct utilization of native hardware SPI channels capable of clock rates up to **80 MHz**.
+* **In-Circuit Flashing:** Flash NOR memories without desoldering by holding the host SoC in a hardware reset state (`PORST_N` to `GND`).
+* **Surgical Partition Burning:** Includes layout padding recipes to rewrite only the bootloader section (`0x00000000 - 0x0001ffff`) in under 2 seconds while preserving art/calibration and NVRAM partitions.
 
-| MCU Target | Port on Linux | Install Command | Set-Target Command | SPI Pin Configuration (MISO / MOSI / CLK / CS) |
+---
+
+## 🛠 Hardware Wiring & MCU Pinouts
+
+<div align="center">
+
+| Target MCU | Linux Device | Install Target | Set-Target Command | Pinout (MISO / MOSI / CLK / CS) |
 | :--- | :--- | :--- | :--- | :--- |
-| **ESP32-S3** (e.g., S3-WROOM-1) | `/dev/ttyACM0` | `./install.sh esp32s3` | `idf.py set-target esp32s3` | MISO: **13** / MOSI: **11** / CLK: **12** / CS: **10** |
-| **ESP32** (Classic, e.g., WROOM-32) | `/dev/ttyUSB0` | `./install.sh esp32` | `idf.py set-target esp32` | MISO: **18** / MOSI: **23** / CLK: **19** / CS: **13** |
-| **ESP32-C3** | `/dev/ttyACM0` | `./install.sh esp32c3` | `idf.py set-target esp32c3` | MISO: **2** / MOSI: **7** / CLK: **6** / CS: **10** |
+| **ESP32-S3** (e.g. S3-WROOM-1) | `/dev/ttyACM0` | `./install.sh esp32s3` | `idf.py set-target esp32s3` | **IO13** / **IO11** / **IO12** / **IO10** |
+| **ESP32** (Classic WROOM-32) | `/dev/ttyUSB0` | `./install.sh esp32` | `idf.py set-target esp32` | **IO18** / **IO23** / **IO19** / **IO13** |
+| **ESP32-C3** | `/dev/ttyACM0` | `./install.sh esp32c3` | `idf.py set-target esp32c3` | **IO2** / **IO7** / **IO6** / **IO10** |
 
-> **IMPORTANT**: ESP32 GPIOs operate at **3.3V**. Ensure your target module is also 3.3V compatible. If you are flashing a 1.8V chip, you must use a bi-directional level shifter.
+</div>
 
-### HLK-7628N Connection Layout
-To program the onboard SPI Flash on the **HLK-7628N**, you must pull the **PORST_N** (Power-On Reset) pin of the HLK-7628N to **GND** to hold its SoC in a reset state.
+> ⚠️ **Important:** ESP32 GPIO logic operates at **3.3V**. Ensure the target flash chip operates at 3.3V. If programming a 1.8V chip, an active bidirectional level converter is strictly required.
 
 ---
 
-## Software Installation & Setup (Linux)
+## 📸 Hardware References
 
-### 1. Install System Prerequisites
-Install the required packages for building ESP-IDF on Ubuntu/Debian:
+<div align="center">
+
+| ESP32-S3 Pinout Reference | HLK-7628N Target Module Layout |
+| :---: | :---: |
+| <img src="./ESP32-S3-WROOM-1.png" width="380px" alt="ESP32-S3 Pinout" /> | <img src="./HLK_7628N.png" width="380px" alt="HLK-7628N Target Pinout" /> |
+
+</div>
+
+---
+
+## 🚀 Installation & Firmware Flashing
+
+### 1. Install System Dependencies
 ```bash
 sudo apt update
-sudo apt install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 -y
+sudo apt install git wget flex bison gperf python3 python3-pip python3-venv \
+    cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 flashrom -y
 ```
+
 ### 2. Set Up ESP-IDF
-Clone the Espressif SDK and install the compiler tools.
-(Replace esp32s3 in ./install.sh with esp32 or esp32c3 if you are using another chip).
-```Bash
-mkdir -p ~/esp
-cd ~/esp
+```bash
+mkdir -p ~/esp && cd ~/esp
 git clone --recursive -b v5.2.2 https://github.com/espressif/esp-idf.git
 cd esp-idf
-
-# Set up tools for your target (e.g., esp32s3, esp32, esp32c3)
 ./install.sh esp32s3
 ```
-### 3. Build & Flash the Programmer Firmware
-Clone the programmer repository, configure the environment, and flash your target MCU:
-```Bash
-# 1. Activate the ESP-IDF environment variables
+
+### 3. Build & Flash the Serprog Firmware
+```bash
+# Export IDF environment
 . ~/esp/esp-idf/export.sh
 
-# 2. Clone this programmer repository
+# Clone serprog source
 cd ~/esp
 git clone https://github.com/thisiseth/esp32-serprog.git
 cd esp32-serprog/src/serprog
 
-# 3. Set the target to match your board (e.g., esp32s3, esp32, esp32c3)
+# Configure and compile
 idf.py set-target esp32s3
-
-# 4. Build the project
 idf.py build
 
-# 5. Flash the binary to your MCU (adjust the port /dev/ttyACM0 or /dev/ttyUSB0)
+# Flash programmer firmware to ESP32
 sudo chmod 666 /dev/ttyACM0
 idf.py flash -p /dev/ttyACM0
 ```
-# Flashing the Target Module (e.g., HLK-7628N)
-Because standard bootloader binaries (e.g., U-Boot) are smaller than the expected full flash size, we pad the binary to 32MB and flash only the bootloader region to protect other partitions.
-Install Flashrom
-```Bash
-sudo apt install flashrom -y
-```
-### 1. Prepare the 32MB Padded Bootloader File
-Execute these commands in the terminal where your bootloader binary is located (replace uboot.bin with your actual filename):
-code
-```Bash
-# Create a 32MB file filled with 0xFF (flash empty state)
+
+---
+
+## ⚡ Flashing Bootloader to Target (e.g. HLK-7628N)
+
+### 1. Prepare 32MB Padded Bootloader Image
+To safely flash only the bootloader sector without damaging factory RF calibrations:
+```bash
+# Create 32MB empty flash image (filled with 0xFF)
 python3 -c "open('full_32m_uboot.bin', 'wb').write(b'\xff' * 33554432)"
 
-# Copy your bootloader to the beginning of the 32MB file
+# Overlay bootloader at the beginning
 dd if=uboot.bin of=full_32m_uboot.bin conv=notrunc
 
-# Create the layout configuration file
+# Define partition boundaries
 echo -e "0x00000000:0x0001ffff bootloader\n0x00020000:0x01ffffff remaining" > layout.txt
 ```
-### 2. Identify the Chip & Flash the Bootloader
-Make sure your target CPU is in the reset state (PORST_N connected to GND).
-(Adjust the port /dev/ttyACM0 or /dev/ttyUSB0 according to your ESP32 model).
-```Bash
-# Verify the SPI flash connection
+
+### 2. Connect and Flash via Flashrom
+Ensure the target SoC's reset pin (`PORST_N`) is connected to **GND**:
+```bash
+# 1. Probe SPI Flash connectivity
 sudo flashrom -p serprog:dev=/dev/ttyACM0:115200,spispeed=8M
 
-# Flash only the bootloader partition (takes ~2 seconds)
-sudo flashrom -p serprog:dev=/dev/ttyACM0:115200,spispeed=8M -c "W25Q256FV" -l layout.txt -i bootloader -w full_32m_uboot.bin
+# 2. Burn the bootloader partition (~2 seconds)
+sudo flashrom -p serprog:dev=/dev/ttyACM0:115200,spispeed=8M \
+    -c "W25Q256FV" -l layout.txt -i bootloader -w full_32m_uboot.bin
 ```
-License & Credits
-This implementation is based upon the upstream open-source serprog protocol. Special thanks to the creators of flashrom and the esp32-serprog firmware community.
-License: GPL-3.0
+
+---
+
+## 📄 License & Credits
+
+This project is licensed under **GPL-3.0**. Built upon the open-source `serprog` protocol, `flashrom` community, and `esp32-serprog` implementation.
